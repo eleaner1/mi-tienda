@@ -18,6 +18,7 @@ interface CartItem {
 }
 
 interface LocalCartItem {
+  id: number; // equals productId for local cart
   productId: number;
   quantity: number;
   product: {
@@ -97,7 +98,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
               : item
           );
         }
-        return [...prev, { productId: product.id, quantity, product }];
+        return [...prev, { id: product.id, productId: product.id, quantity, product }];
       });
     }
   }, [isAuthenticated, user, addMutation]);

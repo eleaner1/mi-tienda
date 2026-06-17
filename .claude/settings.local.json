@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(netstat *)",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:3000/api/trpc/category.list\" -Method GET -TimeoutSec 5 -ErrorAction Stop; \"Status: $\\($r.StatusCode\\) Body: $\\($r.Content.Substring\\(0, [Math]::Min\\(200,$r.Content.Length\\)\\)\\)\" } catch { \"Error: $\\($_.Exception.Message\\)\" })"
+    ]
+  }
+}

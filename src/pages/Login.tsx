@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import {
   Card,
   CardContent,
@@ -15,6 +15,8 @@ import { trpc } from "@/providers/trpc";
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get("redirect") ?? "/";
   const utils = trpc.useUtils();
 
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -31,7 +33,7 @@ export default function Login() {
       if (user.role === "admin") {
         navigate("/admin", { replace: true });
       } else {
-        navigate("/", { replace: true });
+        navigate(redirectTo, { replace: true });
       }
     },
     onError: (err) => {
@@ -43,7 +45,7 @@ export default function Login() {
     onSuccess: async () => {
       setError("");
       await utils.auth.me.invalidate();
-      navigate("/", { replace: true });
+      navigate(redirectTo, { replace: true });
     },
     onError: (err) => {
       setError(err.message || "No se pudo registrar");

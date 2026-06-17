@@ -16,6 +16,7 @@ import {
   Warehouse,
   ArrowRight,
   DollarSign,
+  Settings,
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -190,6 +191,40 @@ export default function AdminDashboard() {
                 <div>
                   <h3 className="font-semibold">Inventario</h3>
                   <p className="text-sm text-muted-foreground">Control de stock y existencias</p>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link to="/admin/orders">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center">
+                  <ShoppingCart className="w-6 h-6 text-orange-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Órdenes</h3>
+                  <p className="text-sm text-muted-foreground">Ver y gestionar pedidos de clientes</p>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link to="/admin/settings">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center">
+                  <Settings className="w-6 h-6 text-slate-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Configuración de pagos</h3>
+                  <p className="text-sm text-muted-foreground">Banco, cuenta y datos para recibir pagos</p>
                 </div>
               </div>
               <ArrowRight className="w-5 h-5 text-muted-foreground" />

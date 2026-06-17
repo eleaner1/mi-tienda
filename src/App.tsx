@@ -10,6 +10,8 @@ import AdminCategories from "@/pages/AdminCategories";
 import AdminProducts from "@/pages/AdminProducts";
 import AdminOffers from "@/pages/AdminOffers";
 import AdminInventory from "@/pages/AdminInventory";
+import AdminOrders from "@/pages/AdminOrders";
+import AdminSettings from "@/pages/AdminSettings";
 import OrdersPage from "@/pages/OrdersPage";
 import SearchPage from "@/pages/SearchPage";
 import CategoryPage from "@/pages/CategoryPage";
@@ -83,6 +85,24 @@ export default function App() {
           element={
             <AdminRoute>
               <AdminInventory />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="admin/orders"
+          element={
+            <AdminRoute>
+              <AdminOrders />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="admin/settings"
+          element={
+            <AdminRoute>
+              <AdminSettings />
             </AdminRoute>
           }
         />

@@ -236,3 +236,30 @@ export const orderItems = mysqlTable("orderItems", {
 
 export type OrderItem = typeof orderItems.$inferSelect;
 export type InsertOrderItem = typeof orderItems.$inferInsert;
+
+// Configuración de la tienda (singleton)
+export const storeSettings = mysqlTable("storeSettings", {
+  id: bigint("id", { mode: "number", unsigned: true })
+    .autoincrement()
+    .primaryKey(),
+
+  bankName: varchar("bankName", { length: 255 }).default("").notNull(),
+
+  accountNumber: varchar("accountNumber", { length: 100 }).default("").notNull(),
+
+  accountHolder: varchar("accountHolder", { length: 255 }).default("").notNull(),
+
+  accountType: varchar("accountType", { length: 100 }).default("Ahorro").notNull(),
+
+  bankPhone: varchar("bankPhone", { length: 50 }).default("").notNull(),
+
+  additionalInfo: text("additionalInfo"),
+
+  updatedAt: timestamp("updatedAt")
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+});
+
+export type StoreSettings = typeof storeSettings.$inferSelect;
+export type InsertStoreSettings = typeof storeSettings.$inferInsert;

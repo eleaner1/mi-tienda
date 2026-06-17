@@ -7,7 +7,9 @@ import {
   cartRouter,
   orderRouter,
   inventoryRouter,
+  settingsRouter,
 } from "./store-router";
+import { paymentRouter } from "./payment-router";
 
 export const appRouter = createRouter({
   ping: publicQuery.query(() => ({
@@ -23,6 +25,8 @@ export const appRouter = createRouter({
   cart: cartRouter,
   order: orderRouter,
   inventory: inventoryRouter,
+  settings: settingsRouter,
+  payment: paymentRouter,
 });
 
 export type AppRouter = typeof appRouter;

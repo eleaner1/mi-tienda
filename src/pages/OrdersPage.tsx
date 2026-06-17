@@ -7,14 +7,42 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Package, Clock, CheckCircle, XCircle, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  ArrowLeft,
+  Package,
+  Clock,
+  CheckCircle,
+  XCircle,
+  ChevronDown,
+  ChevronUp,
+  CreditCard,
+} from "lucide-react";
 
 function StatusBadge({ status }: { status: string }) {
-  const configs: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
-    pending: { color: "bg-yellow-100 text-yellow-800", icon: <Clock className="w-3 h-3" />, label: "Pendiente" },
-    processing: { color: "bg-blue-100 text-blue-800", icon: <Clock className="w-3 h-3" />, label: "Procesando" },
-    completed: { color: "bg-green-100 text-green-800", icon: <CheckCircle className="w-3 h-3" />, label: "Completado" },
-    cancelled: { color: "bg-red-100 text-red-800", icon: <XCircle className="w-3 h-3" />, label: "Cancelado" },
+  const configs: Record<
+    string,
+    { color: string; icon: React.ReactNode; label: string }
+  > = {
+    pending: {
+      color: "bg-yellow-100 text-yellow-800",
+      icon: <Clock className="w-3 h-3" />,
+      label: "Pendiente",
+    },
+    processing: {
+      color: "bg-blue-100 text-blue-800",
+      icon: <Clock className="w-3 h-3" />,
+      label: "Procesando",
+    },
+    completed: {
+      color: "bg-green-100 text-green-800",
+      icon: <CheckCircle className="w-3 h-3" />,
+      label: "Completado",
+    },
+    cancelled: {
+      color: "bg-red-100 text-red-800",
+      icon: <XCircle className="w-3 h-3" />,
+      label: "Cancelado",
+    },
   };
   const config = configs[status] || configs.pending;
 
@@ -33,6 +61,12 @@ export default function OrdersPage() {
   });
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
 
+  const { data: orderDetail, isLoading: loadingDetail } =
+    trpc.order.getById.useQuery(
+      { id: expandedOrder! },
+      { enabled: expandedOrder !== null },
+    );
+
   if (!isAuthenticated) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -40,7 +74,9 @@ export default function OrdersPage() {
           <CardContent className="flex flex-col items-center justify-center py-16">
             <Package className="w-16 h-16 mb-4 text-muted-foreground" />
             <h2 className="text-xl font-bold mb-2">Inicia sesión</h2>
-            <p className="text-muted-foreground mb-6">Debes iniciar sesión para ver tu historial de compras</p>
+            <p className="text-muted-foreground mb-6">
+              Debes iniciar sesión para ver tu historial de compras
+            </p>
             <Link to="/login">
               <Button>Iniciar sesión</Button>
             </Link>
@@ -74,7 +110,11 @@ export default function OrdersPage() {
               <CardContent className="p-0">
                 <div
                   className="p-4 flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+                  onClick={() =>
+                    setExpandedOrder(
+                      expandedOrder === order.id ? null : order.id,
+                    )
+                  }
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-3">
@@ -82,17 +122,25 @@ export default function OrdersPage() {
                       <StatusBadge status={order.status} />
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {order.createdAt ? new Date(order.createdAt).toLocaleDateString("es-ES", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      }) : "Fecha no disponible"}
+                      {order.createdAt
+                        ? new Date(order.createdAt).toLocaleDateString(
+                            "es-ES",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )
+                        : "Fecha no disponible"}
                     </p>
                   </div>
+
                   <div className="flex items-center gap-4">
-                    <span className="font-bold text-lg">${parseFloat(order.total).toFixed(2)}</span>
+                    <span className="font-bold text-lg">
+                      ${parseFloat(order.total).toFixed(2)}
+                    </span>
                     {expandedOrder === order.id ? (
                       <ChevronUp className="w-5 h-5 text-muted-foreground" />
                     ) : (
@@ -104,20 +152,79 @@ export default function OrdersPage() {
                 {expandedOrder === order.id && (
                   <div className="px-4 pb-4">
                     <Separator className="mb-4" />
-                    <div className="space-y-3">
-                      {/* Aquí irían los items de la orden si tuviéramos el detalle */}
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">Total de la orden:</span>
-                        <span className="font-bold">${parseFloat(order.total).toFixed(2)}</span>
+
+                    {loadingDetail ? (
+                      <div className="space-y-2">
+                        {Array.from({ length: 2 }).map((_, i) => (
+                          <Skeleton key={i} className="h-8 rounded" />
+                        ))}
                       </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">Estado:</span>
-                        <StatusBadge status={order.status} />
+                    ) : orderDetail?.items && orderDetail.items.length > 0 ? (
+                      <div className="space-y-3">
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Productos:
+                        </p>
+                        {orderDetail.items.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-3"
+                          >
+                            <div className="w-10 h-10 bg-muted rounded overflow-hidden shrink-0 flex items-center justify-center">
+                              {item.product?.image ? (
+                                <img
+                                  src={item.product.image}
+                                  alt={item.product.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <Package className="w-5 h-5 text-muted-foreground" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {item.product?.name || "Producto"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {item.quantity} ×{" "}
+                                ${parseFloat(item.unitPrice).toFixed(2)}
+                              </p>
+                            </div>
+                            <p className="text-sm font-bold shrink-0">
+                              $
+                              {(
+                                item.quantity * parseFloat(item.unitPrice)
+                              ).toFixed(2)}
+                            </p>
+                          </div>
+                        ))}
+
+                        <Separator />
+
+                        <div className="flex justify-between items-center text-sm font-bold">
+                          <span>Total</span>
+                          <span>${parseFloat(order.total).toFixed(2)}</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">WhatsApp enviado:</span>
-                        <span>{order.whatsappSent ? "Sí" : "No"}</span>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground">
+                            Total de la orden:
+                          </span>
+                          <span className="font-bold">
+                            ${parseFloat(order.total).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground">Estado:</span>
+                          <StatusBadge status={order.status} />
+                        </div>
                       </div>
+                    )}
+
+                    <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
+                      <CreditCard className="w-3 h-3" />
+                      <span>Pagado con tarjeta de débito</span>
                     </div>
                   </div>
                 )}

@@ -1,9 +1,20 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import devServer, { defaultOptions } from "@hono/vite-dev-server";
 import path from "path";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    devServer({
+      entry: "api/boot.ts",
+      // Solo Hono maneja /api/*; todo lo demás va a Vite (React app)
+      exclude: [
+        /^\/(?!api\/).*/,
+        ...defaultOptions.exclude,
+      ],
+    }),
+    react(),
+  ],
 
   resolve: {
     alias: {
@@ -19,10 +30,5 @@ export default defineConfig({
     port: 3000,
     strictPort: true,
     allowedHosts: true,
-
-    hmr: {
-      protocol: "wss",
-      clientPort: 443,
-    },
   },
 });

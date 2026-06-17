@@ -3,6 +3,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/hooks/useAuth";
 import { ShoppingCart, Package } from "lucide-react";
 
 interface ProductCardProps {
@@ -17,7 +18,9 @@ interface ProductCardProps {
 
 export function ProductCard({ id, name, price, image, brand, stock, discountPercent }: ProductCardProps) {
   const { addToCart } = useCart();
+  const { user } = useAuth();
   const originalPrice = parseFloat(price);
+  const isAdmin = user?.role === "admin";
   const hasDiscount = discountPercent && discountPercent > 0;
   const discountedPrice = hasDiscount ? originalPrice * (1 - discountPercent / 100) : originalPrice;
 
@@ -58,17 +61,19 @@ export function ProductCard({ id, name, price, image, brand, stock, discountPerc
           )}
         </div>
       </CardContent>
-      <CardFooter className="p-3 pt-0">
-        <Button
-          className="w-full gap-2"
-          size="sm"
-          disabled={stock === 0}
-          onClick={() => addToCart(product)}
-        >
-          <ShoppingCart className="w-4 h-4" />
-          Agregar
-        </Button>
-      </CardFooter>
+      {!isAdmin && (
+        <CardFooter className="p-3 pt-0">
+          <Button
+            className="w-full gap-2"
+            size="sm"
+            disabled={stock === 0}
+            onClick={() => addToCart(product)}
+          >
+            <ShoppingCart className="w-4 h-4" />
+            Agregar
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }

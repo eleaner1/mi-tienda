@@ -43,7 +43,9 @@ function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   } = useCart();
 
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+
+  if (user?.role === "admin") return null;
 
   const handleCheckout = () => {
     onClose();
@@ -118,7 +120,7 @@ function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
                             onClick={() => {
                               if (item.quantity > 1) {
                                 updateQuantity(
-                                  item.productId,
+                                  item.id,
                                   item.quantity - 1,
                                 );
                               }
@@ -139,7 +141,7 @@ function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
                             onClick={() => {
                               if (item.quantity < stock) {
                                 updateQuantity(
-                                  item.productId,
+                                  item.id,
                                   item.quantity + 1,
                                 );
                               }
@@ -152,7 +154,7 @@ function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
                             variant="ghost"
                             size="icon"
                             className="w-6 h-6 ml-auto text-destructive"
-                            onClick={() => removeFromCart(item.productId)}
+                            onClick={() => removeFromCart(item.id)}
                           >
                             <Trash2 className="w-3 h-3" />
                           </Button>
@@ -349,21 +351,22 @@ function Header() {
                         </Button>
                       </Link>
 
-                      <Link to="/cart" onClick={() => setMenuOpen(false)}>
-                        <Button
-                          variant="ghost"
-                          className="w-full justify-start gap-2"
-                        >
-                          <ShoppingCart className="w-4 h-4" />
-                          Carrito
-
-                          {totalItems > 0 && (
-                            <Badge variant="secondary" className="ml-auto">
-                              {totalItems}
-                            </Badge>
-                          )}
-                        </Button>
-                      </Link>
+                      {user?.role !== "admin" && (
+                        <Link to="/cart" onClick={() => setMenuOpen(false)}>
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start gap-2"
+                          >
+                            <ShoppingCart className="w-4 h-4" />
+                            Carrito
+                            {totalItems > 0 && (
+                              <Badge variant="secondary" className="ml-auto">
+                                {totalItems}
+                              </Badge>
+                            )}
+                          </Button>
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </ScrollArea>
@@ -391,20 +394,21 @@ function Header() {
             </div>
           </form>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative shrink-0"
-            onClick={() => setCartOpen(true)}
-          >
-            <ShoppingCart className="w-5 h-5" />
-
-            {totalItems > 0 && (
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                {totalItems}
-              </Badge>
-            )}
-          </Button>
+          {user?.role !== "admin" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative shrink-0"
+              onClick={() => setCartOpen(true)}
+            >
+              <ShoppingCart className="w-5 h-5" />
+              {totalItems > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                  {totalItems}
+                </Badge>
+              )}
+            </Button>
+          )}
         </div>
       </header>
 

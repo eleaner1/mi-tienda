@@ -8,6 +8,8 @@ import {
   cartItems,
   orders,
   orderItems,
+  users,
+  storeSettings,
 } from "@db/schema";
 import { eq, and, desc, sql, inArray } from "drizzle-orm";
 
@@ -105,6 +107,22 @@ export const categoryRouter = createRouter({
     )
     .mutation(async ({ input }) => {
       const db = getDb();
+
+      // Obtener IDs de productos en esta categoría
+      const categoryProducts = await db
+        .select({ id: products.id })
+        .from(products)
+        .where(eq(products.categoryId, input.id));
+
+      const productIds = categoryProducts.map((p) => p.id);
+
+      if (productIds.length > 0) {
+        // Eliminar en cascada: cartItems, ofertas y orderItems de esos productos
+        await db.delete(cartItems).where(inArray(cartItems.productId, productIds));
+        await db.delete(offers).where(inArray(offers.productId, productIds));
+        await db.delete(orderItems).where(inArray(orderItems.productId, productIds));
+        await db.delete(products).where(inArray(products.id, productIds));
+      }
 
       await db.delete(categories).where(eq(categories.id, input.id));
 
@@ -295,6 +313,10 @@ export const productRouter = createRouter({
     .mutation(async ({ input }) => {
       const db = getDb();
 
+      // Eliminar referencias antes de eliminar el producto
+      await db.delete(cartItems).where(eq(cartItems.productId, input.id));
+      await db.delete(offers).where(eq(offers.productId, input.id));
+      await db.delete(orderItems).where(eq(orderItems.productId, input.id));
       await db.delete(products).where(eq(products.id, input.id));
 
       return { success: true };
@@ -497,6 +519,10 @@ export const cartRouter = createRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role === "admin") {
+        throw new Error("Los administradores no pueden agregar productos al carrito");
+      }
+
       const db = getDb();
 
       const productRows = await db
@@ -655,9 +681,29 @@ export const orderRouter = createRouter({
           }),
         ),
         total: z.string().or(z.number()),
+        paymentIntentId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Si Stripe está configurado y se proporcionó un intentId, verificar el pago
+      const stripeKey = process.env.STRIPE_SECRET_KEY;
+      if (
+        input.paymentIntentId &&
+        stripeKey &&
+        !stripeKey.startsWith("sk_test_REEMPLAZA")
+      ) {
+        const { default: Stripe } = await import("stripe");
+        const stripe = new Stripe(stripeKey);
+        const intent = await stripe.paymentIntents.retrieve(
+          input.paymentIntentId,
+        );
+        if (intent.status !== "succeeded") {
+          throw new Error(
+            "El pago no fue confirmado por Stripe. Intenta de nuevo.",
+          );
+        }
+      }
+
       const db = getDb();
 
       for (const item of input.items) {
@@ -780,6 +826,62 @@ export const orderRouter = createRouter({
     return db.select().from(orders).orderBy(desc(orders.createdAt));
   }),
 
+  listAllWithUsers: adminQuery.query(async () => {
+    const db = getDb();
+
+    return db
+      .select({
+        id: orders.id,
+        userId: orders.userId,
+        status: orders.status,
+        total: orders.total,
+        createdAt: orders.createdAt,
+        updatedAt: orders.updatedAt,
+        userName: users.name,
+        userEmail: users.email,
+      })
+      .from(orders)
+      .leftJoin(users, eq(orders.userId, users.id))
+      .orderBy(desc(orders.createdAt));
+  }),
+
+  getDetailsAdmin: adminQuery
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      const db = getDb();
+
+      const orderResults = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, input.id))
+        .limit(1);
+
+      if (orderResults.length === 0) return null;
+
+      const items = await db
+        .select()
+        .from(orderItems)
+        .where(eq(orderItems.orderId, input.id));
+
+      if (items.length === 0) return { ...orderResults[0], items: [] };
+
+      const productIds = items.map((item) => item.productId);
+      const productsList = await db
+        .select()
+        .from(products)
+        .where(inArray(products.id, productIds));
+
+      const productMap = new Map(productsList.map((p) => [p.id, p]));
+
+      return {
+        ...orderResults[0],
+        items: items.map((item) => ({
+          ...item,
+          product: productMap.get(item.productId) ?? null,
+        })),
+      };
+    }),
+
   updateStatus: adminQuery
     .input(
       z.object({
@@ -838,4 +940,45 @@ export const inventoryRouter = createRouter({
       outOfStock,
     };
   }),
+});
+
+export const settingsRouter = createRouter({
+  get: publicQuery.query(async () => {
+    const db = getDb();
+    const rows = await db.select().from(storeSettings).limit(1);
+    return rows[0] ?? null;
+  }),
+
+  update: adminQuery
+    .input(
+      z.object({
+        additionalInfo: z.string().max(1000).optional(),
+        bankPhone: z.string().max(30).optional(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      const rows = await db.select().from(storeSettings).limit(1);
+
+      if (rows.length === 0) {
+        await db.insert(storeSettings).values({
+          bankName: "",
+          accountNumber: "",
+          accountHolder: "",
+          accountType: "Ahorro",
+          bankPhone: input.bankPhone ?? "",
+          additionalInfo: input.additionalInfo,
+        });
+      } else {
+        await db
+          .update(storeSettings)
+          .set({
+            additionalInfo: input.additionalInfo ?? null,
+            bankPhone: input.bankPhone ?? rows[0].bankPhone,
+          })
+          .where(eq(storeSettings.id, rows[0].id));
+      }
+
+      return { success: true };
+    }),
 });
