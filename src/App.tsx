@@ -12,6 +12,8 @@ import AdminOffers from "@/pages/AdminOffers";
 import AdminInventory from "@/pages/AdminInventory";
 import AdminOrders from "@/pages/AdminOrders";
 import AdminSettings from "@/pages/AdminSettings";
+import AdminReports from "@/pages/AdminReports";
+import CategoriesPage from "@/pages/CategoriesPage";
 import OrdersPage from "@/pages/OrdersPage";
 import SearchPage from "@/pages/SearchPage";
 import CategoryPage from "@/pages/CategoryPage";
@@ -41,6 +43,7 @@ export default function App() {
         <Route path="cart" element={<CartPage />} />
         <Route path="orders" element={<OrdersPage />} />
         <Route path="search" element={<SearchPage />} />
+        <Route path="categories" element={<CategoriesPage />} />
         <Route path="category/:id" element={<CategoryPage />} />
         <Route path="product/:id" element={<ProductDetail />} />
 
@@ -103,6 +106,15 @@ export default function App() {
           element={
             <AdminRoute>
               <AdminSettings />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="admin/reports"
+          element={
+            <AdminRoute>
+              <AdminReports />
             </AdminRoute>
           }
         />

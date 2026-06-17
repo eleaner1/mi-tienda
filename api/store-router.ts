@@ -11,7 +11,7 @@ import {
   users,
   storeSettings,
 } from "@db/schema";
-import { eq, and, desc, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, sql, inArray, gt } from "drizzle-orm";
 
 export const categoryRouter = createRouter({
   list: publicQuery.query(async () => {
@@ -183,7 +183,7 @@ export const productRouter = createRouter({
       return db
         .select()
         .from(products)
-        .where(eq(products.active, true))
+        .where(and(eq(products.active, true), gt(products.mostBought, 0)))
         .orderBy(desc(products.mostBought))
         .limit(input?.limit ?? 8);
     }),
