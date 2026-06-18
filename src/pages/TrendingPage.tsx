@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Home, TrendingUp, Package } from "lucide-react";
 
 export default function TrendingPage() {
-  const { data: products, isLoading } = trpc.product.mostBought.useQuery({ limit: 100 });
+  const { data: products, isLoading } = trpc.product.mostBought.useQuery({ limit: 20 });
 
   return (
     <div className="min-h-screen pb-12">
