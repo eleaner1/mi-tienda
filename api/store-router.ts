@@ -54,6 +54,7 @@ export const categoryRouter = createRouter({
         name: z.string().min(1).max(255),
         description: z.string().optional(),
         image: z.string().optional(),
+        icon: z.string().max(100).optional(),
       }),
     )
     .mutation(async ({ input }) => {
@@ -63,6 +64,7 @@ export const categoryRouter = createRouter({
         name: input.name,
         description: input.description,
         image: input.image,
+        icon: input.icon,
       });
 
       return {
@@ -78,6 +80,7 @@ export const categoryRouter = createRouter({
         name: z.string().min(1).max(255).optional(),
         description: z.string().optional(),
         image: z.string().optional(),
+        icon: z.string().max(100).optional(),
         active: z.boolean().optional(),
       }),
     )
@@ -92,6 +95,7 @@ export const categoryRouter = createRouter({
             description: input.description,
           }),
           ...(input.image !== undefined && { image: input.image }),
+          ...(input.icon !== undefined && { icon: input.icon }),
           ...(input.active !== undefined && { active: input.active }),
         })
         .where(eq(categories.id, input.id));
@@ -173,7 +177,7 @@ export const productRouter = createRouter({
     .input(
       z
         .object({
-          limit: z.number().min(1).max(20).default(8),
+          limit: z.number().min(1).max(100).default(8),
         })
         .optional(),
     )
@@ -192,7 +196,7 @@ export const productRouter = createRouter({
     .input(
       z
         .object({
-          limit: z.number().min(1).max(20).default(8),
+          limit: z.number().min(1).max(100).default(8),
         })
         .optional(),
     )

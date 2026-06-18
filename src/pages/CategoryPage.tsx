@@ -3,7 +3,7 @@ import { trpc } from "@/providers/trpc";
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Home, LayoutGrid, Package } from "lucide-react";
+import { ArrowLeft, Home, LayoutGrid, Package, ChevronRight } from "lucide-react";
 
 export default function CategoryPage() {
   const { id } = useParams<{ id: string }>();
@@ -25,19 +25,19 @@ export default function CategoryPage() {
       <section className="bg-gradient-to-br from-primary/10 via-primary/5 to-indigo-50 py-10 px-4 border-b">
         <div className="container mx-auto max-w-5xl">
           {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-            <Link to="/" className="hover:text-primary transition-colors flex items-center gap-1">
+          <nav className="flex items-center gap-1 text-sm mb-5 flex-wrap">
+            <Link to="/" className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors font-medium">
               <Home className="w-3.5 h-3.5" /> Inicio
             </Link>
-            <span>/</span>
-            <Link to="/categories" className="hover:text-primary transition-colors flex items-center gap-1">
+            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
+            <Link to="/categories" className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors font-medium">
               <LayoutGrid className="w-3.5 h-3.5" /> Categorías
             </Link>
-            <span>/</span>
-            <span className="text-foreground font-medium truncate">
+            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
+            <span className="text-foreground font-semibold truncate max-w-[180px]">
               {loadingCat ? "..." : (category?.name ?? "Categoría")}
             </span>
-          </div>
+          </nav>
 
           <div className="flex items-center gap-4">
             <Link to="/categories">
@@ -46,16 +46,16 @@ export default function CategoryPage() {
               </Button>
             </Link>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               {category?.image ? (
                 <img
                   src={category.image}
                   alt={category.name}
-                  className="w-12 h-12 rounded-xl object-cover shadow-sm border"
+                  className="w-14 h-14 rounded-2xl object-cover shadow-md border-2 border-white"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center">
-                  <Package className="w-6 h-6 text-primary" />
+                <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center shadow-sm">
+                  <Package className="w-7 h-7 text-primary" />
                 </div>
               )}
               <div>
@@ -64,6 +64,11 @@ export default function CategoryPage() {
                 </h1>
                 {category?.description && (
                   <p className="text-muted-foreground text-sm mt-0.5">{category.description}</p>
+                )}
+                {!loadingProducts && products && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {products.length} producto{products.length !== 1 ? "s" : ""}
+                  </p>
                 )}
               </div>
             </div>
@@ -94,9 +99,6 @@ export default function CategoryPage() {
           </div>
         ) : (
           <>
-            <p className="text-sm text-muted-foreground mb-5">
-              {products.length} producto{products.length !== 1 ? "s" : ""} encontrado{products.length !== 1 ? "s" : ""}
-            </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {products.map((product, i) => (
                 <div key={product.id} className="anim-fade-up" style={{ animationDelay: `${i * 0.06}s` }}>

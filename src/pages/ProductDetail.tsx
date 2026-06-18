@@ -1,14 +1,18 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Package, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Package, ShoppingCart, AlertTriangle, Plus, Minus } from "lucide-react";
 
 export default function ProductDetail() {
   const { id } = useParams();
   const productId = Number(id);
   const { addToCart } = useCart();
+  const { isAdmin } = useAuth();
+  const [quantity, setQuantity] = useState(1);
 
   const { data: product, isLoading } = trpc.product.getById.useQuery({
     id: productId,
@@ -40,12 +44,15 @@ export default function ProductDetail() {
 
       <Card>
         <CardContent className="p-6 grid md:grid-cols-2 gap-8">
-          <div className="bg-muted rounded-xl flex items-center justify-center overflow-hidden min-h-[300px]">
+          <div className="bg-white rounded-xl flex items-center justify-center overflow-hidden min-h-[300px] border">
             {product.image ? (
               <img
                 src={product.image}
                 alt={product.name}
-                className="w-full h-full object-cover"
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                className="w-full h-full object-contain p-4 max-h-[400px]"
               />
             ) : (
               <Package className="w-24 h-24 text-muted-foreground" />
@@ -73,25 +80,66 @@ export default function ProductDetail() {
             <div>
               <h2 className="font-semibold mb-1">Stock disponible</h2>
               <p>{product.stock} unidades</p>
+              {product.stock > 0 && product.stock < 20 && (
+                <div className="flex items-center gap-1.5 mt-1.5 text-orange-500">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span className="text-sm font-medium">¡Pocas unidades disponibles!</span>
+                </div>
+              )}
             </div>
 
-            <Button
-              className="w-full gap-2"
-              disabled={product.stock <= 0}
-              onClick={() =>
-                addToCart({
-                  id: product.id,
-                  name: product.name,
-                  price: product.price,
-                  image: product.image,
-                  stock: product.stock,
-                  brand: product.brand,
-                })
-              }
-            >
-              <ShoppingCart className="w-4 h-4" />
-              {product.stock > 0 ? "Agregar al carrito" : "Sin stock"}
-            </Button>
+            {!isAdmin && (
+              <>
+                {product.stock > 0 && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-muted-foreground">Cantidad:</span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="w-9 h-9"
+                        disabled={quantity <= 1}
+                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                      <span className="w-10 text-center font-semibold text-lg">{quantity}</span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="w-9 h-9"
+                        disabled={quantity >= product.stock}
+                        onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  className="w-full gap-2"
+                  disabled={product.stock <= 0}
+                  onClick={() => {
+                    addToCart(
+                      {
+                        id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        image: product.image,
+                        stock: product.stock,
+                        brand: product.brand,
+                      },
+                      quantity,
+                    );
+                    setQuantity(1);
+                  }}
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                  {product.stock > 0 ? "Agregar al carrito" : "Sin stock"}
+                </Button>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>

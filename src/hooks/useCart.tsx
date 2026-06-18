@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "./useAuth";
 
@@ -45,8 +45,9 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [localCart, setLocalCart] = useState<LocalCartItem[]>([]);
+  const [migrationItems, setMigrationItems] = useState<LocalCartItem[]>([]);
   const utils = trpc.useUtils();
 
   // Cargar carrito local del storage
@@ -65,6 +66,42 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(localCart));
   }, [localCart]);
+
+  // Ref para leer localCart dentro del efecto de migración sin state timing issues
+  const localCartRef = useRef(localCart);
+  useEffect(() => { localCartRef.current = localCart; }, [localCart]);
+
+  // null = auth todavía no ha resuelto por primera vez
+  const prevAuthRef = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    const prev = prevAuthRef.current;
+
+    if (prev === null) {
+      // Primera vez que auth resuelve — solo registrar estado, no migrar
+      prevAuthRef.current = isAuthenticated;
+      return;
+    }
+
+    if (!prev && isAuthenticated) {
+      // Transición real: usuario acaba de loguearse
+      prevAuthRef.current = true;
+      const itemsToMigrate = localCartRef.current;
+      if (itemsToMigrate.length === 0) return;
+
+      setLocalCart([]);
+      setMigrationItems(itemsToMigrate); // mostrar mientras llega el serverCart
+      Promise.allSettled(
+        itemsToMigrate.map(item =>
+          utils.client.cart.add.mutate({ productId: item.productId, quantity: item.quantity })
+        )
+      ).then(() => utils.cart.getCart.invalidate());
+    } else {
+      prevAuthRef.current = isAuthenticated;
+    }
+  }, [isAuthenticated, authLoading, utils]);
 
   // Carrito del servidor (usuarios logueados)
   const { data: serverCart, isLoading } = trpc.cart.getCart.useQuery(undefined, {
@@ -131,6 +168,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [isAuthenticated, clearMutation]);
 
+  // Limpiar migrationItems en cuanto el serverCart llegue del servidor
+  useEffect(() => {
+    if (serverCart !== undefined && migrationItems.length > 0) {
+      setMigrationItems([]);
+    }
+  }, [serverCart, migrationItems.length]);
+
   const items = isAuthenticated && serverCart ? serverCart.map(item => ({
     id: item.id,
     userId: item.userId,
@@ -144,7 +188,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       stock: item.product.stock,
       brand: item.product.brand,
     } : null,
-  })) : localCart;
+  })) : migrationItems.length > 0 ? migrationItems : localCart;
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = items.reduce((sum, item) => {

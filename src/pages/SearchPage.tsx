@@ -12,10 +12,18 @@ export default function SearchPage() {
   const query = searchParams.get("q") || "";
   const [searchInput, setSearchInput] = useState(query);
 
-  const { data: results, isLoading } = trpc.product.search.useQuery(
+  const { data: searchResults, isLoading: loadingSearch } = trpc.product.search.useQuery(
     { query },
-    { enabled: query.length > 0 }
+    { enabled: query.length > 0 },
   );
+
+  const { data: allProducts, isLoading: loadingAll } = trpc.product.list.useQuery(
+    { limit: 100, offset: 0 },
+    { enabled: query.length === 0 },
+  );
+
+  const isLoading = query.length > 0 ? loadingSearch : loadingAll;
+  const results = query.length > 0 ? searchResults : allProducts;
 
   useEffect(() => {
     setSearchInput(query);
@@ -25,6 +33,8 @@ export default function SearchPage() {
     e.preventDefault();
     if (searchInput.trim()) {
       setSearchParams({ q: searchInput.trim() });
+    } else {
+      setSearchParams({});
     }
   };
 
@@ -36,7 +46,7 @@ export default function SearchPage() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
         </Link>
-        <h1 className="text-2xl font-bold">Buscar productos</h1>
+        <h1 className="text-2xl font-bold">Explorar productos</h1>
       </div>
 
       <form onSubmit={handleSearch} className="mb-8">
@@ -55,10 +65,18 @@ export default function SearchPage() {
       </form>
 
       {query && (
-        <div className="mb-4">
+        <div className="mb-4 flex items-center gap-2">
           <p className="text-muted-foreground">
             Resultados para: <span className="font-medium text-foreground">"{query}"</span>
           </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs h-7 px-2"
+            onClick={() => { setSearchInput(""); setSearchParams({}); }}
+          >
+            Limpiar
+          </Button>
         </div>
       )}
 
@@ -69,19 +87,24 @@ export default function SearchPage() {
           ))}
         </div>
       ) : results && results.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {results.map((product) => (
-            <ProductCard
-              key={product.id}
-              id={product.id}
-              name={product.name}
-              price={product.price}
-              image={product.image}
-              brand={product.brand}
-              stock={product.stock}
-            />
-          ))}
-        </div>
+        <>
+          {!query && (
+            <p className="text-sm text-muted-foreground mb-4">{results.length} productos disponibles</p>
+          )}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {results.map((product) => (
+              <ProductCard
+                key={product.id}
+                id={product.id}
+                name={product.name}
+                price={product.price}
+                image={product.image}
+                brand={product.brand}
+                stock={product.stock}
+              />
+            ))}
+          </div>
+        </>
       ) : query ? (
         <div className="text-center py-12 text-muted-foreground">
           <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -90,8 +113,8 @@ export default function SearchPage() {
         </div>
       ) : (
         <div className="text-center py-12 text-muted-foreground">
-          <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p>Escribe un término de búsqueda para encontrar productos</p>
+          <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p>No hay productos disponibles</p>
         </div>
       )}
     </div>

@@ -55,6 +55,8 @@ export const categories = mysqlTable("categories", {
 
   image: text("image"),
 
+  icon: varchar("icon", { length: 100 }),
+
   active: boolean("active").default(true).notNull(),
 
   createdAt: timestamp("createdAt").defaultNow().notNull(),

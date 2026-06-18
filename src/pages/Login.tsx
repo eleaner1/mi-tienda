@@ -3,11 +3,11 @@ import { useNavigate, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Store, LogIn, UserPlus, ShoppingBag, Star, Shield, Zap } from "lucide-react";
+import { Store, LogIn, UserPlus, Tag, Star, Shield, Zap } from "lucide-react";
 import { trpc } from "@/providers/trpc";
 
 const FEATURES = [
-  { icon: ShoppingBag, text: "Miles de productos disponibles" },
+  { icon: Tag, text: "Miles de productos disponibles" },
   { icon: Zap, text: "Ofertas exclusivas para miembros" },
   { icon: Shield, text: "Compras 100% seguras con PayPal" },
   { icon: Star, text: "Historial completo de pedidos" },
@@ -17,12 +17,13 @@ export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirect") ?? "/";
+  const initialMode = searchParams.get("mode") === "register" ? "register" : "login";
   const utils = trpc.useUtils();
 
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("admin@test.com");
-  const [password, setPassword] = useState("1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   const loginMutation = trpc.auth.login.useMutation({
@@ -65,7 +66,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-primary/5 via-background to-indigo-50">
-      {/* Panel izquierdo — solo en desktop */}
+      {/* Panel izquierdo - solo en desktop */}
       <div className="hidden lg:flex flex-col justify-between w-1/2 bg-gradient-to-br from-primary via-primary/90 to-indigo-700 p-12 text-white relative overflow-hidden">
         <div className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-white/5" />
         <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-white/5" />
@@ -103,7 +104,7 @@ export default function Login() {
         </p>
       </div>
 
-      {/* Panel derecho — formulario */}
+      {/* Panel derecho - formulario */}
       <div className="flex flex-col justify-center w-full lg:w-1/2 p-6 sm:p-12">
         {/* Logo mobile */}
         <div className="flex flex-col items-center mb-8 lg:hidden">

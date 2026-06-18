@@ -3,6 +3,7 @@ import { trpc } from "@/providers/trpc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Package, LayoutGrid, ArrowRight, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getCategoryIcon } from "@/lib/categoryIcons";
 
 const CATEGORY_COLORS = [
   "from-blue-500 to-indigo-600",
@@ -56,6 +57,7 @@ export default function CategoriesPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {categories.map((cat, i) => {
               const gradient = CATEGORY_COLORS[i % CATEGORY_COLORS.length];
+              const CatIcon = getCategoryIcon(cat.icon);
               return (
                 <Link
                   key={cat.id}
@@ -63,18 +65,16 @@ export default function CategoriesPage() {
                   style={{ animationDelay: `${i * 0.06}s` }}
                   className="anim-fade-up group relative rounded-2xl overflow-hidden border hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                 >
-                  {/* Gradient background */}
                   <div className={`bg-gradient-to-br ${gradient} p-6 flex flex-col items-center justify-center min-h-[140px] text-white`}>
                     <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
-                      {cat.image ? (
-                        <img src={cat.image} alt={cat.name} className="w-10 h-10 object-cover rounded-full" />
+                      {!cat.icon && cat.image ? (
+                        <img src={cat.image} alt={cat.name} loading="lazy" decoding="async" className="w-10 h-10 object-cover rounded-full" />
                       ) : (
-                        <Package className="w-7 h-7" />
+                        <CatIcon className="w-7 h-7" />
                       )}
                     </div>
                     <h3 className="font-bold text-center text-sm leading-tight">{cat.name}</h3>
                   </div>
-                  {/* Hover arrow */}
                   <div className="absolute bottom-3 right-3 w-6 h-6 rounded-full bg-white/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <ArrowRight className="w-3 h-3 text-white" />
                   </div>

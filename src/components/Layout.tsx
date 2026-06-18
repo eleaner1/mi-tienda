@@ -107,6 +107,8 @@ function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
                           <img
                             src={item.product.image}
                             alt={item.product.name}
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -332,7 +334,7 @@ function Header() {
                             >
                               <div className="flex items-center gap-2">
                                 {cat.image ? (
-                                  <img src={cat.image} alt={cat.name} className="w-5 h-5 rounded-full object-cover" />
+                                  <img src={cat.image} alt={cat.name} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover" />
                                 ) : (
                                   <Tag className="w-3.5 h-3.5 text-muted-foreground" />
                                 )}
@@ -393,6 +395,22 @@ function Header() {
   );
 }
 
+function FooterLink({ to, label }: { to: string; label: string }) {
+  const { pathname } = useLocation();
+  const handleClick = () => {
+    if (pathname === to) window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  return (
+    <Link
+      to={to}
+      onClick={handleClick}
+      className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5"
+    >
+      <ChevronRight className="w-3 h-3" /> {label}
+    </Link>
+  );
+}
+
 export function Layout() {
   return (
     <div className="min-h-screen flex flex-col">
@@ -428,9 +446,7 @@ export function Layout() {
                   { to: "/search", label: "Todos los productos" },
                 ].map(({ to, label }) => (
                   <li key={to}>
-                    <Link to={to} className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
-                      <ChevronRight className="w-3 h-3" /> {label}
-                    </Link>
+                    <FooterLink to={to} label={label} />
                   </li>
                 ))}
               </ul>
@@ -445,9 +461,7 @@ export function Layout() {
                   { to: "/login", label: "Mi cuenta" },
                 ].map(({ to, label }) => (
                   <li key={to}>
-                    <Link to={to} className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
-                      <ChevronRight className="w-3 h-3" /> {label}
-                    </Link>
+                    <FooterLink to={to} label={label} />
                   </li>
                 ))}
               </ul>

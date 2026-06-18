@@ -298,7 +298,7 @@ function SuccessScreen({
                     <div key={i} className="flex items-center gap-3 px-4 py-3">
                       <div className="w-10 h-10 bg-muted rounded flex items-center justify-center shrink-0 overflow-hidden">
                         {item.product?.image ? (
-                          <img src={item.product.image} alt="" className="w-full h-full object-cover" />
+                          <img src={item.product.image} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                         ) : (
                           <Package className="w-5 h-5 text-muted-foreground" />
                         )}
@@ -470,6 +470,8 @@ export default function CartPage() {
                           <img
                             src={item.product.image}
                             alt={item.product.name}
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -477,21 +479,34 @@ export default function CartPage() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium truncate">
-                          {item.product?.name}
-                        </h3>
-                        {item.product?.brand && (
-                          <p className="text-sm text-muted-foreground">
-                            {item.product.brand}
-                          </p>
-                        )}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <h3 className="font-medium truncate">
+                              {item.product?.name}
+                            </h3>
+                            {item.product?.brand && (
+                              <p className="text-sm text-muted-foreground">
+                                {item.product.brand}
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="w-8 h-8 text-destructive hover:text-destructive shrink-0"
+                            onClick={() => removeFromCart(item.id)}
+                            title="Eliminar producto"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                         <p className="font-bold mt-1">
                           ${parseFloat(item.product?.price || "0").toFixed(2)}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
                           Stock: {stock}
                         </p>
-                        <div className="flex items-center gap-3 mt-3">
+                        <div className="flex items-center justify-between mt-3">
                           <div className="flex items-center gap-1">
                             <Button
                               variant="outline"
@@ -547,25 +562,14 @@ export default function CartPage() {
                               <Plus className="w-3 h-3" />
                             </Button>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive"
-                            onClick={() => removeFromCart(item.id)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-1" />
-                            Quitar
-                          </Button>
+                          <p className="font-bold text-lg">
+                            $
+                            {(
+                              item.quantity *
+                              parseFloat(item.product?.price || "0")
+                            ).toFixed(2)}
+                          </p>
                         </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="font-bold text-lg">
-                          $
-                          {(
-                            item.quantity *
-                            parseFloat(item.product?.price || "0")
-                          ).toFixed(2)}
-                        </p>
                       </div>
                     </div>
                   </CardContent>
@@ -599,7 +603,7 @@ export default function CartPage() {
                     <Link to="/login?redirect=/cart" className="flex-1">
                       <Button className="w-full">Iniciar sesión</Button>
                     </Link>
-                    <Link to="/register?redirect=/cart" className="flex-1">
+                    <Link to="/login?mode=register&redirect=/cart" className="flex-1">
                       <Button variant="outline" className="w-full">Crear cuenta</Button>
                     </Link>
                   </div>
