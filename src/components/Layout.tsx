@@ -13,11 +13,11 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
   Menu,
   ShoppingCart,
+  ShoppingBag,
   Search,
   Home,
   Package,
@@ -28,7 +28,6 @@ import {
   Plus,
   Minus,
   Trash2,
-  Store,
   ChevronRight,
   LayoutGrid,
   Tag,
@@ -90,7 +89,7 @@ function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
               </Link>
             </div>
           ) : (
-            <ScrollArea className="h-full">
+            <div className="h-full overflow-y-auto overscroll-contain">
               <div className="space-y-3 p-4">
                 {items.map((item) => {
                   const stock = item.product?.stock ?? 0;
@@ -163,7 +162,7 @@ function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
           )}
         </div>
 
@@ -213,12 +212,12 @@ function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
-        <div className="container mx-auto px-4 h-16 flex items-center gap-3">
+      <header className="sticky top-0 z-50 w-full shadow-lg bg-[#1a2b8c]">
+        <div className="container mx-auto px-3 sm:px-4 py-2.5 flex items-center gap-2 sm:gap-3">
           {/* Menu */}
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="shrink-0 hover:bg-primary/10 hover:text-primary transition-colors">
+              <Button variant="ghost" size="icon" className="shrink-0 text-white hover:bg-white/15 hover:text-white transition-colors">
                 <Menu className="w-5 h-5" />
               </Button>
             </SheetTrigger>
@@ -227,14 +226,14 @@ function Header() {
               <div className="flex flex-col h-full">
                 <SheetHeader className="px-5 py-4 border-b bg-gradient-to-br from-primary/10 to-indigo-50">
                   <SheetTitle className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-sm">
-                      <Store className="w-4 h-4 text-white" />
+                    <div className="w-8 h-8 rounded-lg bg-yellow-400 flex items-center justify-center shadow-sm">
+                      <ShoppingBag className="w-4 h-4 text-gray-900" />
                     </div>
                     <span className="font-extrabold text-lg">MiTienda</span>
                   </SheetTitle>
                 </SheetHeader>
 
-                <ScrollArea className="flex-1">
+                <div className="flex-1 overflow-y-auto overscroll-contain">
                   <div className="px-4 py-4 space-y-5">
                     {/* User */}
                     <div className="space-y-2">
@@ -346,45 +345,74 @@ function Header() {
                         </div>
                       </>
                     )}
+
                   </div>
-                </ScrollArea>
+                </div>
               </div>
             </SheetContent>
           </Sheet>
 
           {/* Brand */}
           <Link to="/" className="flex items-center gap-2 shrink-0 group">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
-              <Store className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-lg bg-yellow-400 flex items-center justify-center shadow-sm group-hover:bg-yellow-300 transition-colors">
+              <ShoppingBag className="w-4 h-4 text-gray-900" />
             </div>
-            <span className="font-extrabold text-lg hidden sm:block tracking-tight">MiTienda</span>
+            <span className="font-extrabold text-white text-lg hidden sm:block tracking-tight">MiTienda</span>
           </Link>
 
-          {/* Search */}
-          <form onSubmit={handleSearch} className="flex-1 max-w-xl mx-auto">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          {/* Categorías (visible md+) */}
+          <Link
+            to="/categories"
+            className="hidden md:flex items-center gap-1.5 shrink-0 bg-white/15 hover:bg-white/25 text-white px-3 py-2 rounded-xl transition-colors border border-white/20"
+          >
+            <LayoutGrid className="w-4 h-4" />
+            <span className="text-sm font-semibold whitespace-nowrap">Categorías</span>
+          </Link>
+
+          {/* Search — protagonista */}
+          <form onSubmit={handleSearch} className="flex-1 flex items-stretch min-w-0">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-10" />
               <Input
-                placeholder="Buscar productos..."
-                className="pl-9 w-full bg-muted/50 border-0 focus-visible:bg-white focus-visible:ring-1 focus-visible:ring-primary/50 rounded-full transition-all"
+                placeholder="Buscar productos, marcas y más..."
+                className="pl-10 pr-1 h-11 w-full rounded-l-2xl rounded-r-none border-0 shadow-inner bg-white text-gray-800 text-sm placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+            <button
+              type="submit"
+              className="h-11 px-3 sm:px-5 rounded-l-none rounded-r-2xl bg-yellow-400 hover:bg-yellow-300 active:bg-yellow-500 text-gray-900 font-bold shrink-0 text-sm flex items-center gap-1.5 transition-colors"
+            >
+              <Search className="w-4 h-4 sm:hidden" />
+              <span className="hidden sm:inline">Buscar</span>
+            </button>
           </form>
 
-          {/* Cart button */}
+          {/* Historial (lg+) */}
+          <Link
+            to={isAuthenticated ? "/orders" : "/login"}
+            className="hidden lg:flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors shrink-0 px-1"
+          >
+            <History className="w-5 h-5" />
+            <span className="text-[10px] font-medium whitespace-nowrap leading-none">Historial</span>
+          </Link>
+
+          {/* Cart */}
           {user?.role !== "admin" && (
             <button
-              className="relative shrink-0 w-9 h-9 rounded-full flex items-center justify-center hover:bg-primary/10 hover:text-primary transition-colors"
+              className="relative shrink-0 flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors px-1"
               onClick={() => setCartOpen(true)}
             >
-              <ShoppingCart className="w-5 h-5" />
-              {totalItems > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center shadow">
-                  {totalItems > 9 ? "9+" : totalItems}
-                </span>
-              )}
+              <div className="relative">
+                <ShoppingCart className="w-6 h-6" />
+                {totalItems > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-yellow-400 text-gray-900 text-[10px] font-bold flex items-center justify-center px-1 leading-none">
+                    {totalItems > 9 ? "9+" : totalItems}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] font-medium leading-none hidden lg:block">Carrito</span>
             </button>
           )}
         </div>
@@ -404,7 +432,7 @@ function FooterLink({ to, label }: { to: string; label: string }) {
     <Link
       to={to}
       onClick={handleClick}
-      className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5"
+      className="text-sm text-white/70 hover:text-yellow-400 transition-colors flex items-center gap-1.5"
     >
       <ChevronRight className="w-3 h-3" /> {label}
     </Link>
@@ -421,24 +449,24 @@ export function Layout() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-gradient-to-br from-muted/60 to-muted mt-auto">
+      <footer className="bg-[#1a2b8c] mt-auto">
         <div className="container mx-auto px-4 py-10">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-8">
             {/* Brand */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                  <Store className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 rounded-lg bg-yellow-400 flex items-center justify-center">
+                  <ShoppingBag className="w-4 h-4 text-gray-900" />
                 </div>
-                <span className="font-extrabold text-lg">MiTienda</span>
+                <span className="font-extrabold text-white text-lg">MiTienda</span>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-sm text-white/70 leading-relaxed">
                 Tu tienda de confianza. Encuentra los mejores productos al mejor precio.
               </p>
             </div>
             {/* Links */}
             <div>
-              <p className="font-semibold text-sm mb-3">Explorar</p>
+              <p className="font-semibold text-white text-sm mb-3">Explorar</p>
               <ul className="space-y-2">
                 {[
                   { to: "/", label: "Inicio" },
@@ -453,7 +481,7 @@ export function Layout() {
             </div>
             {/* Info */}
             <div>
-              <p className="font-semibold text-sm mb-3">Compras</p>
+              <p className="font-semibold text-white text-sm mb-3">Compras</p>
               <ul className="space-y-2">
                 {[
                   { to: "/cart", label: "Mi carrito" },
@@ -467,11 +495,11 @@ export function Layout() {
               </ul>
             </div>
           </div>
-          <Separator className="mb-6" />
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
+          <Separator className="mb-6 bg-white/20" />
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-white/60">
             <p>© 2026 MiTienda. Todos los derechos reservados.</p>
             <p className="flex items-center gap-1">
-              Pago seguro con <span className="font-semibold text-blue-600">PayPal</span>
+              Pago seguro con <span className="font-semibold text-blue-300">PayPal</span>
             </p>
           </div>
         </div>

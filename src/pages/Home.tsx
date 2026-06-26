@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import { Link } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { ProductCard } from "@/components/ProductCard";
@@ -6,9 +6,120 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCategoryIcon } from "@/lib/categoryIcons";
 import {
-  ShoppingBag, ArrowRight, Zap, TrendingUp, Package,
-  Store, Star, Shield, Truck, ChevronRight, Trophy,
+  ShoppingBag, ShoppingCart, ArrowRight, ArrowLeft, ChevronDown, Zap, TrendingUp, Package,
+  LayoutGrid, Star, Shield, Truck, Trophy,
+  Gamepad2, BookOpen, Smartphone, Sparkles,
 } from "lucide-react";
+
+
+type Category = { id: number; name: string; icon: string | null; image: string | null };
+
+function CategoriesCarousel({ categories }: { categories: Category[] }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const paused = useRef(false);
+
+  const getStep = () => {
+    const el = scrollRef.current;
+    if (!el) return 200;
+    const card = el.firstElementChild as HTMLElement | null;
+    return card ? card.offsetWidth + 12 : 200;
+  };
+
+  const scroll = (dir: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const step = getStep();
+    el.scrollBy({ left: dir === "right" ? step : -step, behavior: "smooth" });
+  };
+
+  // Auto-scroll loop: advances one card every 2.5 s, loops back to start
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (paused.current) return;
+      const el = scrollRef.current;
+      if (!el) return;
+      const step = getStep();
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - step / 2;
+      if (atEnd) {
+        el.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        el.scrollBy({ left: step, behavior: "smooth" });
+      }
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <section className="container mx-auto px-4 pt-12">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2 anim-fade-up">
+          <LayoutGrid className="w-5 h-5 text-primary" />
+          <h2 className="text-2xl font-bold">Categorías</h2>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => scroll("left")}
+            className="w-8 h-8 rounded-full border bg-white shadow-sm flex items-center justify-center hover:bg-muted transition-colors"
+            aria-label="Desplazar izquierda"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => scroll("right")}
+            className="w-8 h-8 rounded-full border bg-white shadow-sm flex items-center justify-center hover:bg-muted transition-colors"
+            aria-label="Desplazar derecha"
+          >
+            <ArrowRight className="w-4 h-4" />
+          </button>
+          <Link to="/categories" className="text-sm text-primary hover:underline flex items-center gap-1 font-medium ml-1">
+            Ver todas <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+
+      <div
+        ref={scrollRef}
+        onMouseEnter={() => { paused.current = true; }}
+        onMouseLeave={() => { paused.current = false; }}
+        onTouchStart={() => { paused.current = true; }}
+        onTouchEnd={() => { paused.current = false; }}
+        className="flex gap-3 overflow-x-auto scroll-smooth pb-2"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        {categories.map((cat, i) => {
+          const CatIcon = getCategoryIcon(cat.icon);
+          return (
+            <Link
+              key={cat.id}
+              to={`/category/${cat.id}`}
+              style={{ animationDelay: `${i * 0.05}s` }}
+              className="anim-fade-up group relative overflow-hidden rounded-3xl shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 shrink-0 w-[calc(100vw/3-1rem)] sm:w-[calc(100vw/6-1rem)]"
+            >
+              <div className="aspect-[3/4]">
+                {cat.image && (
+                  <img
+                    src={cat.image}
+                    alt={cat.name}
+                    loading="lazy"
+                    decoding="async"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-b from-blue-600/55 via-indigo-700/65 to-violet-900/80" />
+                <div className="relative z-10 flex flex-col items-center justify-center h-full gap-2 p-3">
+                  <CatIcon className="w-7 h-7 text-yellow-400 shrink-0" />
+                  <span className="text-white font-bold text-xs text-center leading-tight">
+                    {cat.name}
+                  </span>
+                </div>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
 
 export default function Home() {
   const { data: mostBought,  isLoading: loadingMost }   = trpc.product.mostBought.useQuery({ limit: 8 });
@@ -37,37 +148,89 @@ export default function Home() {
     <div className="space-y-0 pb-16">
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-indigo-700 text-white py-24 px-4">
-        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-white/5 pointer-events-none" />
-        <div className="absolute -bottom-16 -left-16 w-72 h-72 rounded-full bg-white/5 pointer-events-none" />
-        <div className="absolute top-1/3 right-1/3 w-48 h-48 rounded-full bg-white/5 pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/6 w-24 h-24 rounded-full bg-yellow-300/10 pointer-events-none" />
+      <section className="relative bg-[#1a2b8c] text-white py-14 md:py-24 px-4">
+        <div className="container mx-auto max-w-6xl relative z-10">
+          <div className="flex flex-col-reverse md:flex-row items-center gap-10 md:gap-12">
 
-        <div className="container mx-auto max-w-5xl relative z-10">
-          <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 bg-white/15 border border-white/20 rounded-full px-4 py-1.5 text-sm mb-6 anim-fade-up">
-              <Star className="w-3.5 h-3.5 fill-yellow-300 text-yellow-300" />
-              <span>La tienda online de confianza</span>
+            {/* Columna izquierda: eslogan + CTAs */}
+            <div className="flex-1 text-center md:text-left">
+              <div className="inline-flex items-center gap-2 bg-white/15 border border-white/20 rounded-full px-4 py-1.5 text-sm mb-6 anim-fade-up">
+                <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                <span>La tienda online de confianza</span>
+              </div>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 leading-tight anim-fade-up anim-delay-1">
+                Productos que{" "}
+                <span className="text-yellow-400">te hacen la vida más fácil.</span>
+              </h1>
+              <p className="text-lg md:text-xl text-white/80 max-w-lg mx-auto md:mx-0 mb-8 anim-fade-up anim-delay-2">
+                Descubre miles de productos con la mejor calidad y al mejor precio. Ofertas exclusivas cada día.
+              </p>
+              <div className="flex flex-wrap gap-3 justify-center md:justify-start anim-fade-up anim-delay-3">
+                <Link to="/search">
+                  <Button size="lg" className="gap-2 bg-yellow-400 text-gray-900 hover:bg-yellow-300 shadow-lg font-bold">
+                    <ShoppingBag className="w-5 h-5" />
+                    Explorar productos
+                  </Button>
+                </Link>
+                <Link to="/categories">
+                  <Button size="lg" variant="outline" className="gap-2 border-white/40 text-white hover:bg-white/10 bg-transparent">
+                    Ver categorías <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </div>
             </div>
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-5 leading-tight anim-fade-up anim-delay-1">
-              Bienvenido a{" "}
-              <span className="text-yellow-300 drop-shadow">MiTienda</span>
-            </h1>
-            <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto mb-8 anim-fade-up anim-delay-2">
-              Descubre los mejores productos al mejor precio. Ofertas exclusivas y calidad garantizada.
-            </p>
-            <div className="flex flex-wrap gap-3 justify-center anim-fade-up anim-delay-3">
-              <Link to="/search">
-                <Button size="lg" className="gap-2 bg-white text-primary hover:bg-white/90 shadow-lg font-semibold">
-                  <ShoppingBag className="w-5 h-5" />
-                  Explorar productos
-                </Button>
-              </Link>
-              <Link to="/categories">
-                <Button size="lg" variant="outline" className="gap-2 border-white/40 text-white hover:bg-white/10 bg-transparent">
-                  Ver categorías <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
+
+            {/* Columna derecha: ilustración carrito mágico */}
+            <div className="flex-1 flex items-center justify-center anim-fade-up anim-delay-2">
+              <div className="relative w-64 h-64 sm:w-72 sm:h-72 md:w-80 md:h-80">
+                {/* Resplandor central */}
+                <div className="absolute inset-8 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" />
+
+                {/* Carrito principal */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-white/10 border-2 border-white/25 flex items-center justify-center shadow-2xl">
+                    <ShoppingCart className="w-16 h-16 sm:w-20 sm:h-20 text-yellow-400 drop-shadow-lg" />
+                    <div className="absolute inset-0 rounded-3xl bg-yellow-400/10 blur-md pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Productos flotantes — 4 esquinas */}
+                <div
+                  className="absolute top-3 left-3 sm:top-4 sm:left-4 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#1e3a8a] border border-white/25 flex items-center justify-center shadow-lg animate-bounce"
+                  style={{ animationDuration: "3.2s" }}
+                >
+                  <Gamepad2 className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-300" />
+                </div>
+                <div
+                  className="absolute top-3 right-3 sm:top-4 sm:right-4 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#1e3a8a] border border-white/25 flex items-center justify-center shadow-lg animate-bounce"
+                  style={{ animationDuration: "2.8s", animationDelay: "0.4s" }}
+                >
+                  <Smartphone className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-300" />
+                </div>
+                <div
+                  className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#1e3a8a] border border-white/25 flex items-center justify-center shadow-lg animate-bounce"
+                  style={{ animationDuration: "3.6s", animationDelay: "0.8s" }}
+                >
+                  <BookOpen className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-300" />
+                </div>
+                <div
+                  className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#1e3a8a] border border-white/25 flex items-center justify-center shadow-lg animate-bounce"
+                  style={{ animationDuration: "2.5s", animationDelay: "0.2s" }}
+                >
+                  <Package className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-300" />
+                </div>
+
+                {/* Estrellas */}
+                <Star className="absolute top-16 left-0 w-4 h-4 text-yellow-300 fill-yellow-300 animate-pulse" />
+                <Star className="absolute top-1 right-[4.5rem] w-3 h-3 text-yellow-200 fill-yellow-200 animate-pulse" style={{ animationDelay: "0.7s" }} />
+                <Star className="absolute bottom-16 right-0 w-4 h-4 text-yellow-300 fill-yellow-300 animate-pulse" style={{ animationDelay: "1.2s" }} />
+                <Star className="absolute bottom-1 left-[4.5rem] w-3 h-3 text-yellow-200 fill-yellow-200 animate-pulse" style={{ animationDelay: "0.4s" }} />
+
+                {/* Destellos giratorios */}
+                <Sparkles className="absolute top-10 right-12 w-5 h-5 text-yellow-400 animate-spin" style={{ animationDuration: "8s" }} />
+                <Sparkles className="absolute bottom-12 left-10 w-4 h-4 text-yellow-300 animate-spin" style={{ animationDuration: "6s", animationDirection: "reverse" }} />
+                <Sparkles className="absolute top-[5.5rem] left-9 w-3 h-3 text-yellow-200 animate-pulse" style={{ animationDelay: "0.9s" }} />
+              </div>
             </div>
           </div>
 
@@ -80,58 +243,31 @@ export default function Home() {
               { icon: Truck,   value: "Garantizada",                     label: "Entrega rápida" },
             ].map(({ icon: Icon, value, label }) => (
               <div key={label} className="bg-white/10 border border-white/15 rounded-2xl p-4 text-center backdrop-blur-sm">
-                <Icon className="w-5 h-5 mx-auto mb-1.5 text-yellow-300" />
+                <Icon className="w-5 h-5 mx-auto mb-1.5 text-yellow-400" />
                 <p className="font-bold text-base leading-none">{value}</p>
                 <p className="text-white/60 text-xs mt-1">{label}</p>
               </div>
             ))}
           </div>
         </div>
+
+        {/* Sticky scroll hint — se pega al fondo del viewport mientras el hero esté visible,
+            desaparece solo al salir de la sección. No cubre texto porque sticky fluye en el DOM. */}
+        <div className="sticky bottom-0 flex justify-center py-3 pointer-events-none">
+          <button
+            onClick={() => window.scrollTo({ top: window.innerHeight, behavior: "smooth" })}
+            className="pointer-events-auto flex flex-col items-center gap-0.5 text-white/50 hover:text-white/90 transition-colors"
+            aria-label="Ver más contenido"
+          >
+            <span className="text-[9px] tracking-[0.2em] uppercase font-semibold">Descubre más</span>
+            <ChevronDown className="w-5 h-5 animate-bounce" />
+          </button>
+        </div>
       </section>
 
       {/* ── Categorías ────────────────────────────────────────────────── */}
       {categories && categories.length > 0 && (
-        <section className="container mx-auto px-4 pt-12">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2 anim-fade-up">
-              <Store className="w-6 h-6 text-primary" />
-              <h2 className="text-2xl font-bold">Categorías</h2>
-            </div>
-            <Link to="/categories" className="text-sm text-primary hover:underline flex items-center gap-1">
-              Ver todas <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {categories.map((cat, i) => {
-              const CatIcon = getCategoryIcon(cat.icon);
-              return (
-                <Link
-                  key={cat.id}
-                  to={`/category/${cat.id}`}
-                  style={{ animationDelay: `${i * 0.05}s` }}
-                  className="anim-fade-up group flex flex-col items-center p-5 rounded-2xl border-2 border-transparent bg-muted/40 shadow-sm hover:border-primary hover:shadow-[0_8px_30px_rgba(0,0,0,0.13)] hover:-translate-y-2 hover:bg-primary/5 transition-all duration-300"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary group-hover:scale-110 group-hover:shadow-lg transition-all duration-300">
-                    {!cat.icon && cat.image ? (
-                      <img
-                        src={cat.image}
-                        alt={cat.name}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-9 h-9 object-cover rounded-xl group-hover:brightness-0 group-hover:invert transition-all"
-                      />
-                    ) : (
-                      <CatIcon className="w-7 h-7 text-primary group-hover:text-white transition-colors" />
-                    )}
-                  </div>
-                  <span className="text-sm font-semibold text-center leading-tight group-hover:text-primary transition-colors">
-                    {cat.name}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
+        <CategoriesCarousel categories={categories} />
       )}
 
       {/* ── Los más comprados ─────────────────────────────────────────── */}
@@ -189,15 +325,32 @@ export default function Home() {
           </div>
         ) : offers && offers.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {offers.map((item, i) => (
-              <div key={item.product.id} className="anim-fade-up" style={{ animationDelay: `${i * 0.07}s` }}>
-                <ProductCard
-                  id={item.product.id} name={item.product.name} price={item.product.price}
-                  image={item.product.image} brand={item.product.brand} stock={item.product.stock}
-                  discountPercent={item.offer.discountPercent}
-                />
-              </div>
-            ))}
+            {offers.map((item, i) => {
+              const endDate = item.offer.endDate ? new Date(item.offer.endDate) : null;
+              const now = new Date();
+              const diffMs = endDate ? endDate.getTime() - now.getTime() : null;
+              const diffDays = diffMs !== null ? Math.ceil(diffMs / (1000 * 60 * 60 * 24)) : null;
+              const expiryLabel = diffDays !== null
+                ? diffDays <= 0 ? "Vence hoy"
+                  : diffDays === 1 ? "Vence mañana"
+                  : diffDays <= 7 ? `Vence en ${diffDays} días`
+                  : endDate!.toLocaleDateString("es-NI", { day: "numeric", month: "short", year: "numeric" })
+                : null;
+              return (
+                <div key={item.product.id} className="anim-fade-up flex flex-col gap-1" style={{ animationDelay: `${i * 0.07}s` }}>
+                  <ProductCard
+                    id={item.product.id} name={item.product.name} price={item.product.price}
+                    image={item.product.image} brand={item.product.brand} stock={item.product.stock}
+                    discountPercent={item.offer.discountPercent}
+                  />
+                  {expiryLabel && (
+                    <p className={`text-center text-xs font-medium px-2 py-0.5 rounded-full mx-auto ${diffDays !== null && diffDays <= 1 ? "bg-red-100 text-red-700" : "bg-amber-50 text-amber-700"}`}>
+                      ⏱ {expiryLabel}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-14 text-muted-foreground bg-muted/30 rounded-2xl">

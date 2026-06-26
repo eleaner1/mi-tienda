@@ -896,11 +896,31 @@ export const orderRouter = createRouter({
     .mutation(async ({ input }) => {
       const db = getDb();
 
+      // Avoid double-restoring stock if already cancelled
+      const current = await db
+        .select({ status: orders.status })
+        .from(orders)
+        .where(eq(orders.id, input.id))
+        .limit(1);
+
+      // When cancelling a non-cancelled order, return items to stock
+      if (input.status === "cancelled" && current[0]?.status !== "cancelled") {
+        const items = await db
+          .select()
+          .from(orderItems)
+          .where(eq(orderItems.orderId, input.id));
+
+        for (const item of items) {
+          await db
+            .update(products)
+            .set({ stock: sql`${products.stock} + ${item.quantity}` })
+            .where(eq(products.id, item.productId));
+        }
+      }
+
       await db
         .update(orders)
-        .set({
-          status: input.status,
-        })
+        .set({ status: input.status })
         .where(eq(orders.id, input.id));
 
       return { success: true };

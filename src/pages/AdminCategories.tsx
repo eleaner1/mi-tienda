@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Edit2, LayoutGrid, Save, X } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Edit2, LayoutGrid, Save, X, Search } from "lucide-react";
 import { CATEGORY_ICONS, ICON_LABELS, getCategoryIcon } from "@/lib/categoryIcons";
 
 // ─── Selector de icono ────────────────────────────────────────────────────────
@@ -49,12 +49,18 @@ function IconPicker({
 export default function AdminCategories() {
   const utils = trpc.useUtils();
   const { data: categories, isLoading } = trpc.category.listAll.useQuery();
+  const [search, setSearch] = useState("");
+
+  const filtered = categories?.filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase()),
+  );
 
   // Crear
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName]   = useState("");
   const [newDesc, setNewDesc]   = useState("");
   const [newIcon, setNewIcon]   = useState("package");
+  const [newImage, setNewImage] = useState("");
 
   // Editar
   const [editOpen, setEditOpen]   = useState(false);
@@ -62,12 +68,13 @@ export default function AdminCategories() {
   const [editName, setEditName]   = useState("");
   const [editDesc, setEditDesc]   = useState("");
   const [editIcon, setEditIcon]   = useState("package");
+  const [editImage, setEditImage] = useState("");
 
   const createMutation = trpc.category.create.useMutation({
     onSuccess: () => {
       utils.category.listAll.invalidate();
       utils.category.list.invalidate();
-      setNewName(""); setNewDesc(""); setNewIcon("package");
+      setNewName(""); setNewDesc(""); setNewIcon("package"); setNewImage("");
       setCreateOpen(false);
       toast.success("Categoría creada");
     },
@@ -92,19 +99,20 @@ export default function AdminCategories() {
 
   const handleCreate = () => {
     if (!newName.trim()) { toast.error("El nombre es requerido"); return; }
-    createMutation.mutate({ name: newName.trim(), description: newDesc || undefined, icon: newIcon });
+    createMutation.mutate({ name: newName.trim(), description: newDesc || undefined, icon: newIcon, image: newImage || undefined });
   };
 
   const handleUpdate = () => {
     if (!editId || !editName.trim()) { toast.error("El nombre es requerido"); return; }
-    updateMutation.mutate({ id: editId, name: editName.trim(), description: editDesc || undefined, icon: editIcon });
+    updateMutation.mutate({ id: editId, name: editName.trim(), description: editDesc || undefined, icon: editIcon, image: editImage || undefined });
   };
 
-  const openEdit = (cat: { id: number; name: string; description: string | null; icon: string | null }) => {
+  const openEdit = (cat: { id: number; name: string; description: string | null; icon: string | null; image: string | null }) => {
     setEditId(cat.id);
     setEditName(cat.name);
     setEditDesc(cat.description ?? "");
     setEditIcon(cat.icon ?? "package");
+    setEditImage(cat.image ?? "");
     setEditOpen(true);
   };
 
@@ -134,6 +142,13 @@ export default function AdminCategories() {
                 <label className="text-sm font-medium mb-1 block">Descripción</label>
                 <Input value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="Descripción opcional" />
               </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">URL de imagen de fondo</label>
+                <Input value={newImage} onChange={(e) => setNewImage(e.target.value)} placeholder="https://..." />
+                {newImage && (
+                  <img src={newImage} alt="preview" className="mt-2 h-20 w-full object-cover rounded-xl" />
+                )}
+              </div>
               <IconPicker value={newIcon} onChange={setNewIcon} />
               <Button className="w-full" onClick={handleCreate} disabled={createMutation.isPending}>
                 {createMutation.isPending ? "Creando..." : "Crear categoría"}
@@ -155,6 +170,13 @@ export default function AdminCategories() {
                 <label className="text-sm font-medium mb-1 block">Descripción</label>
                 <Input value={editDesc} onChange={(e) => setEditDesc(e.target.value)} />
               </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">URL de imagen de fondo</label>
+                <Input value={editImage} onChange={(e) => setEditImage(e.target.value)} placeholder="https://..." />
+                {editImage && (
+                  <img src={editImage} alt="preview" className="mt-2 h-20 w-full object-cover rounded-xl" />
+                )}
+              </div>
               <IconPicker value={editIcon} onChange={setEditIcon} />
               <Button className="w-full" onClick={handleUpdate} disabled={updateMutation.isPending}>
                 {updateMutation.isPending ? "Guardando..." : "Guardar cambios"}
@@ -164,11 +186,21 @@ export default function AdminCategories() {
         </Dialog>
       </div>
 
+      <div className="relative max-w-xs mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Input
+          placeholder="Buscar categoría..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-8 text-center text-muted-foreground">Cargando...</div>
-          ) : categories && categories.length > 0 ? (
+          ) : filtered && filtered.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -181,14 +213,18 @@ export default function AdminCategories() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {categories.map((cat) => {
+                {filtered.map((cat) => {
                   const Icon = getCategoryIcon(cat.icon);
                   return (
                     <TableRow key={cat.id}>
                       <TableCell className="text-muted-foreground">{cat.id}</TableCell>
                       <TableCell>
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Icon className="w-4 h-4 text-primary" />
+                        <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-primary/10 flex items-center justify-center shrink-0">
+                          {cat.image && (
+                            <img src={cat.image} alt={cat.name} className="absolute inset-0 w-full h-full object-cover" />
+                          )}
+                          {cat.image && <div className="absolute inset-0 bg-gradient-to-b from-blue-600/50 to-violet-800/70" />}
+                          <Icon className={`w-4 h-4 relative z-10 ${cat.image ? "text-yellow-400" : "text-primary"}`} />
                         </div>
                       </TableCell>
                       <TableCell className="font-medium">{cat.name}</TableCell>
@@ -224,7 +260,7 @@ export default function AdminCategories() {
             </Table>
           ) : (
             <div className="p-8 text-center text-muted-foreground">
-              No hay categorías. Crea la primera.
+              {search ? "No se encontraron categorías." : "No hay categorías. Crea la primera."}
             </div>
           )}
         </CardContent>

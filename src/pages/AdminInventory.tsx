@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, Warehouse, Package, AlertTriangle, Save, X, Edit2, Download } from "lucide-react";
+import { ArrowLeft, Warehouse, Package, AlertTriangle, Save, X, Edit2, Download, Search } from "lucide-react";
 
 export default function AdminInventory() {
   const utils = trpc.useUtils();
@@ -16,6 +16,12 @@ export default function AdminInventory() {
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editStock, setEditStock] = useState("");
+  const [search, setSearch] = useState("");
+
+  const filtered = inventory?.filter((item) => {
+    const q = search.toLowerCase();
+    return item.name.toLowerCase().includes(q) || (item.brand ?? "").toLowerCase().includes(q);
+  });
 
   const updateStockMutation = trpc.product.updateStock.useMutation({
     onSuccess: () => {
@@ -119,12 +125,23 @@ export default function AdminInventory() {
       {/* Tabla de inventario */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de inventario</CardTitle>
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <CardTitle>Lista de inventario</CardTitle>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Buscar por nombre o marca..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-8 text-center text-muted-foreground">Cargando...</div>
-          ) : inventory && inventory.length > 0 ? (
+          ) : filtered && filtered.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -139,7 +156,7 @@ export default function AdminInventory() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {inventory.map((item) => (
+                {filtered.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell>{item.id}</TableCell>
                     <TableCell className="font-medium">{item.name}</TableCell>
@@ -192,7 +209,7 @@ export default function AdminInventory() {
             </Table>
           ) : (
             <div className="p-8 text-center text-muted-foreground">
-              No hay productos en el inventario.
+              {search ? "No se encontraron productos." : "No hay productos en el inventario."}
             </div>
           )}
         </CardContent>

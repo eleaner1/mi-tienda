@@ -10,12 +10,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Tag, Save, X } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Tag, Save, X, Search } from "lucide-react";
 
 export default function AdminOffers() {
   const utils = trpc.useUtils();
   const { data: offers, isLoading } = trpc.offer.listAll.useQuery();
   const { data: products } = trpc.product.list.useQuery({ limit: 100 });
+  const [search, setSearch] = useState("");
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -159,6 +160,16 @@ export default function AdminOffers() {
         </Dialog>
       </div>
 
+      <div className="relative max-w-xs mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Input
+          placeholder="Buscar por producto..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
@@ -177,7 +188,9 @@ export default function AdminOffers() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {offers.map((offer) => (
+                {offers.filter((o) =>
+                  getProductName(o.productId).toLowerCase().includes(search.toLowerCase())
+                ).map((offer) => (
                   <TableRow key={offer.id}>
                     {editingId === offer.id ? (
                       <>
@@ -239,7 +252,7 @@ export default function AdminOffers() {
             </Table>
           ) : (
             <div className="p-8 text-center text-muted-foreground">
-              No hay ofertas. Crea la primera.
+              {search ? "No se encontraron ofertas." : "No hay ofertas. Crea la primera."}
             </div>
           )}
         </CardContent>

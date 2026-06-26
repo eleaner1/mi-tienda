@@ -11,12 +11,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Edit2, Package, Save, X, ImageIcon } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Edit2, Package, Save, X, ImageIcon, Search } from "lucide-react";
 
 export default function AdminProducts() {
   const utils = trpc.useUtils();
   const { data: products, isLoading } = trpc.product.list.useQuery({ limit: 100 });
   const { data: categories } = trpc.category.listAll.useQuery();
+  const [search, setSearch] = useState("");
+
+  const filtered = products?.filter((p) => {
+    const q = search.toLowerCase();
+    return p.name.toLowerCase().includes(q) || (p.brand ?? "").toLowerCase().includes(q);
+  });
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -185,11 +191,21 @@ export default function AdminProducts() {
         </Dialog>
       </div>
 
+      <div className="relative max-w-xs mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Input
+          placeholder="Buscar por nombre o marca..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-8 text-center text-muted-foreground">Cargando...</div>
-          ) : products && products.length > 0 ? (
+          ) : filtered && filtered.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -206,7 +222,7 @@ export default function AdminProducts() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {products.map((product) => (
+                  {filtered.map((product) => (
                     <TableRow key={product.id}>
                       {editingId === product.id ? (
                         <>
@@ -299,7 +315,7 @@ export default function AdminProducts() {
             </div>
           ) : (
             <div className="p-8 text-center text-muted-foreground">
-              No hay productos. Crea el primero.
+              {search ? "No se encontraron productos." : "No hay productos. Crea el primero."}
             </div>
           )}
         </CardContent>

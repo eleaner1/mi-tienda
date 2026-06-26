@@ -1,20 +1,9 @@
 import { Link } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Package, LayoutGrid, ArrowRight, Home } from "lucide-react";
+import { Package, LayoutGrid, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getCategoryIcon } from "@/lib/categoryIcons";
-
-const CATEGORY_COLORS = [
-  "from-blue-500 to-indigo-600",
-  "from-purple-500 to-pink-600",
-  "from-green-500 to-emerald-600",
-  "from-orange-500 to-red-500",
-  "from-yellow-500 to-amber-600",
-  "from-teal-500 to-cyan-600",
-  "from-rose-500 to-pink-500",
-  "from-violet-500 to-purple-600",
-];
 
 export default function CategoriesPage() {
   const { data: categories, isLoading } = trpc.category.list.useQuery();
@@ -54,29 +43,29 @@ export default function CategoriesPage() {
             <p className="text-lg font-medium">No hay categorías disponibles</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {categories.map((cat, i) => {
-              const gradient = CATEGORY_COLORS[i % CATEGORY_COLORS.length];
               const CatIcon = getCategoryIcon(cat.icon);
               return (
                 <Link
                   key={cat.id}
                   to={`/category/${cat.id}`}
                   style={{ animationDelay: `${i * 0.06}s` }}
-                  className="anim-fade-up group relative rounded-2xl overflow-hidden border hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                  className="anim-fade-up group relative overflow-hidden rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 aspect-[3/4]"
                 >
-                  <div className={`bg-gradient-to-br ${gradient} p-6 flex flex-col items-center justify-center min-h-[140px] text-white`}>
-                    <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
-                      {!cat.icon && cat.image ? (
-                        <img src={cat.image} alt={cat.name} loading="lazy" decoding="async" className="w-10 h-10 object-cover rounded-full" />
-                      ) : (
-                        <CatIcon className="w-7 h-7" />
-                      )}
-                    </div>
-                    <h3 className="font-bold text-center text-sm leading-tight">{cat.name}</h3>
-                  </div>
-                  <div className="absolute bottom-3 right-3 w-6 h-6 rounded-full bg-white/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <ArrowRight className="w-3 h-3 text-white" />
+                  {cat.image && (
+                    <img
+                      src={cat.image}
+                      alt={cat.name}
+                      loading="lazy"
+                      decoding="async"
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-b from-blue-600/55 via-indigo-700/65 to-violet-900/80" />
+                  <div className="relative z-10 flex flex-col items-center justify-center h-full gap-3 p-4">
+                    <CatIcon className="w-9 h-9 text-yellow-400 shrink-0 group-hover:scale-110 transition-transform duration-300" />
+                    <h3 className="text-white font-bold text-sm text-center leading-tight">{cat.name}</h3>
                   </div>
                 </Link>
               );

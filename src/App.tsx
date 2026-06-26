@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router";
 import { Layout } from "@/components/Layout";
 import Home from "@/pages/Home";
 import { useAuth } from "@/hooks/useAuth";
+import { Toaster } from "@/components/ui/sonner";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -49,6 +50,8 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
+    <>
+    <Toaster richColors position="top-center" />
     <Routes>
       <Route path="/" element={<><ScrollToTop /><Layout /></>}>
         <Route index element={<Home />} />
@@ -75,5 +78,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
+    </>
   );
 }

@@ -17,7 +17,101 @@ import {
   CreditCard,
   History,
   ShoppingBag,
+  Download,
 } from "lucide-react";
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: "Pendiente",
+  processing: "Procesando",
+  completed: "Completado",
+  cancelled: "Cancelado",
+};
+
+function buildReceiptHtml(
+  order: { id: number; status: string; total: string; createdAt: Date | string | null },
+  items: Array<{ id: number; quantity: number; unitPrice: string; product?: { name?: string | null } | null }>,
+) {
+  const dateStr = order.createdAt
+    ? new Date(order.createdAt).toLocaleDateString("es-NI", {
+        year: "numeric", month: "long", day: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      })
+    : "Fecha no disponible";
+
+  const rows = items.map(
+    (item) => `
+    <tr>
+      <td>${item.product?.name ?? "Producto"}</td>
+      <td class="center">${item.quantity}</td>
+      <td class="right">$${parseFloat(item.unitPrice).toFixed(2)}</td>
+      <td class="right bold">$${(item.quantity * parseFloat(item.unitPrice)).toFixed(2)}</td>
+    </tr>`,
+  ).join("");
+
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>
+<title>Pedido #${order.id} — MiTienda</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:Arial,sans-serif;color:#1a1a1a;padding:40px;max-width:640px;margin:0 auto}
+  .header{text-align:center;padding-bottom:20px;border-bottom:3px solid #1a2b8c;margin-bottom:24px}
+  .logo{font-size:22px;font-weight:900;color:#1a2b8c}
+  .sub{font-size:12px;color:#777;margin-top:4px}
+  .meta{display:flex;gap:12px;margin-bottom:24px}
+  .box{flex:1;background:#f5f7ff;border:1px solid #dde2f0;border-radius:8px;padding:10px 14px}
+  .lbl{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em}
+  .val{font-size:14px;font-weight:700;color:#1a2b8c;margin-top:3px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{background:#1a2b8c;color:#fff;padding:9px 12px;text-align:left}
+  th.center,td.center{text-align:center}
+  th.right,td.right{text-align:right}
+  td{padding:8px 12px;border-bottom:1px solid #eee}
+  td.bold{font-weight:700}
+  .total td{background:#f5f7ff;font-weight:900;font-size:15px;color:#1a2b8c;border-top:2px solid #1a2b8c}
+  .pay{margin-top:14px;font-size:12px;color:#666}
+  .footer{margin-top:28px;text-align:center;font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px}
+  @media print{body{padding:20px}}
+</style></head><body>
+<div class="header">
+  <div class="logo">&#128717; MiTienda</div>
+  <div class="sub">Comprobante de compra</div>
+</div>
+<div class="meta">
+  <div class="box"><div class="lbl">Pedido</div><div class="val">#${order.id}</div></div>
+  <div class="box"><div class="lbl">Fecha</div><div class="val" style="font-size:12px">${dateStr}</div></div>
+  <div class="box"><div class="lbl">Estado</div><div class="val">${STATUS_LABELS[order.status] ?? order.status}</div></div>
+</div>
+<table>
+  <thead><tr><th>Producto</th><th class="center">Cant.</th><th class="right">Precio unit.</th><th class="right">Subtotal</th></tr></thead>
+  <tbody>
+    ${rows}
+    <tr class="total">
+      <td colspan="3" class="right">Total pagado</td>
+      <td class="right">$${parseFloat(order.total).toFixed(2)}</td>
+    </tr>
+  </tbody>
+</table>
+<p class="pay">&#128179; Pagado con PayPal</p>
+<div class="footer">Gracias por tu compra &mdash; MiTienda &copy; ${new Date().getFullYear()}</div>
+<script>window.onload=function(){window.print()}</script>
+</body></html>`;
+}
+
+function downloadOrderReceipt(
+  order: { id: number; status: string; total: string; createdAt: Date | string | null },
+  items: Array<{ id: number; quantity: number; unitPrice: string; product?: { name?: string | null } | null }>,
+) {
+  const html = buildReceiptHtml(order, items);
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, "_blank");
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  if (!win) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pedido-${order.id}.html`;
+    a.click();
+  }
+}
 
 function StatusBadge({ status }: { status: string }) {
   const configs: Record<string, { bg: string; text: string; icon: React.ReactNode; label: string }> = {
@@ -175,9 +269,22 @@ export default function OrdersPage() {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
-                    <CreditCard className="w-3.5 h-3.5" />
-                    <span>Pagado con PayPal</span>
+                  <div className="flex items-center justify-between mt-3">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <CreditCard className="w-3.5 h-3.5" />
+                      <span>Pagado con PayPal</span>
+                    </div>
+                    {orderDetail?.items && orderDetail.items.length > 0 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5 text-xs h-8 border-primary/40 text-primary hover:bg-primary/5"
+                        onClick={() => downloadOrderReceipt(order, orderDetail.items)}
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Descargar comprobante
+                      </Button>
+                    )}
                   </div>
                 </div>
               )}

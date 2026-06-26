@@ -2,6 +2,7 @@ import { Fragment, useState } from "react";
 import { Link } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -29,6 +30,7 @@ import {
   ChevronUp,
   Package,
   User,
+  Search,
 } from "lucide-react";
 
 function StatusBadge({ status }: { status: string }) {
@@ -46,6 +48,17 @@ export default function AdminOrders() {
   const utils = trpc.useUtils();
   const { data: orders, isLoading } = trpc.order.listAllWithUsers.useQuery();
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
+
+  const filtered = orders?.filter((o) => {
+    const q = search.toLowerCase();
+    return (
+      String(o.id).includes(q) ||
+      (o.userName ?? "").toLowerCase().includes(q) ||
+      (o.userEmail ?? "").toLowerCase().includes(q) ||
+      o.status.toLowerCase().includes(q)
+    );
+  });
 
   const { data: orderDetail, isLoading: loadingDetail } =
     trpc.order.getDetailsAdmin.useQuery(
@@ -109,13 +122,23 @@ export default function AdminOrders() {
         </Card>
       </div>
 
+      <div className="relative max-w-sm mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Input
+          placeholder="Buscar por ID, cliente o estado..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-16 rounded-lg" />
           ))}
         </div>
-      ) : orders && orders.length > 0 ? (
+      ) : filtered && filtered.length > 0 ? (
         <Card>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -131,7 +154,7 @@ export default function AdminOrders() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.map((order) => (
+                  {filtered.map((order) => (
                     <Fragment key={order.id}>
                       <TableRow
                         className={
@@ -305,7 +328,7 @@ export default function AdminOrders() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <ShoppingCart className="w-16 h-16 mb-4 opacity-50" />
-            <p className="text-lg font-medium">No hay órdenes aún</p>
+            <p className="text-lg font-medium">{search ? "No se encontraron órdenes." : "No hay órdenes aún"}</p>
           </CardContent>
         </Card>
       )}
